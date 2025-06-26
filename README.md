@@ -35,12 +35,21 @@ To evaluate the artifact you will need to build the METL language.
 
 ### Downloading the artifact
 
-Download it from Zenodo.
+Check it out from the git repository
+```
+> git clone https://github.com/thwfhk/met-oopsla25-artifact.git
+```
+
+You should now have the following files on your machine
+```
+> cd met-oopsla25-artifact && ls
+app  CHANGELOG.md  METL.cabal  package.yaml  README.md  src  stack.yaml  stack.yaml.lock  test
+```
 
 ### Building METL
 
 You need to have Stack and Haskell installed first. If you're a
-Haskell hacker, go ahead with `stack build` and adapting `stack.yaml`
+Haskell hacker, go ahead with `stack build` and adapt `stack.yaml`
 as you need. If not, follow the below instructions.
 1. Install GHCup following [this link](https://www.haskell.org/ghcup/).
 2. Run `ghcup tui` to enter a text-based user interface.
@@ -66,7 +75,7 @@ We have provided the expected output in `test/paper-examples.me`
 
 We additionally provide three program files, `test/basic.me`,
 `test/toss.me`, and `test/nqueens.me`. The second one is taken from
-the repository of the Frank language. The third one implements a
+the repository of the [Frank language](https://github.com/frank-lang/frank). The third one implements a
 solver for n-queens using effect handlers.
 
 You are welcome to write your own METL programs. The Section 2 of the
@@ -159,7 +168,7 @@ with ADT definitions.
 
 #### Printing
 
-We support a built-in print operation. For instance, `print "hello
+We support a built-in print function. For instance, `print "hello
 world"` prints hello world.
 
 #### Frank-style notations
