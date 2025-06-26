@@ -1,0 +1,163 @@
+-- This file contains all well-typed programs in METL from the paper (Sections 2 and 8).
+
+
+----------------------------------------------------------------
+-- Section 2.2
+----------------------------------------------------------------
+
+effect Gen [a] = yield : a => 1
+
+iter : (Int -> 1) -> List Int -> 1
+iter f nil         = ()
+iter f (cons x xs) = f x; iter f xs
+
+s22 : [Gen Int](1 -> List Int -> 1)
+s22 () = iter (fun x -> do yield x)
+
+
+----------------------------------------------------------------
+-- Section 2.3
+----------------------------------------------------------------
+
+asList : <Gen Int>(1 -> 1) -> List Int
+asList m = handle<Gen Int> m () with {
+  return ()  => nil,
+  yield  x r => cons x (r ())
+}
+
+
+----------------------------------------------------------------
+-- Section 2.4
+----------------------------------------------------------------
+
+s24a : [Gen Int](1 -> 1) -> [Gen Int, Gen String](1 -> 1)
+s24a f = f
+
+s24b : [Gen Int](1 -> 1) -> <Gen Int>(1 -> 1)
+s24b f = f
+
+
+----------------------------------------------------------------
+-- Section 2.5
+----------------------------------------------------------------
+
+effect State [s] = get : 1 => s | put : s => 1
+
+state : <State Int>(1 -> 1) -> Int -> 1
+state m = handle<State Int> m () with {
+  return x    => fun s -> x,
+  get    () r => fun s -> r s s,
+  put    s' r => fun s -> r () s'
+}
+
+prefixSum : [Gen Int, State Int](List Int -> 1)
+prefixSum xs = iter (fun x -> do put (do get + x); do yield (do get)) xs
+
+s25 : List Int
+s25 = asList (fun () -> state (fun () -> prefixSum [3,1,4,1,5,9]) 0)
+-- s25 = asList {state {prefixSum [3,1,4,1,5,9]} 0}
+
+
+----------------------------------------------------------------
+-- Section 2.6
+----------------------------------------------------------------
+
+effect Coop = ufork : 1 => Bool | suspend : 1 => 1
+
+data Proc = proc (List Proc -> 1)
+
+-- Different from the paper, we need to define an append function.
+append : forall a . List a -> List a -> List a
+append nil         ys = ys
+append (cons x xs) ys = cons x (append @a xs ys)
+
+push : Proc -> List Proc -> List Proc
+push x xs = append @Proc xs (cons x nil)
+
+next : List Proc -> 1
+next nil                = ()
+next (cons (proc p) ps) = p ps
+
+schedule : <Coop>(1 -> 1) -> List Proc -> 1
+schedule m = handle m () with {
+  return  ()   => fun q -> next q,
+  suspend () r => fun q -> next (push (proc (r ())) q),
+  ufork   () r => fun q -> r true (push (proc (r false)) q)
+}
+
+-- We provide a concurrency example here.
+coopExample : 1 -> 1
+coopExample () = schedule (fun () ->
+  if (do ufork ())
+  then print "A1 "; do suspend(); print "A2 "
+  else print "B1 "; do suspend(); print "B2 "
+) nil
+
+
+----------------------------------------------------------------
+-- Section 2.7
+----------------------------------------------------------------
+
+data Maybe a = nothing | just a
+
+find : (Int -> Bool) -> List Int -> Maybe Int
+find p xs = handle<Gen Int> (iter (fun x -> if mask<Gen>(p x) then do yield x else ()) xs) with {
+  return _   => nothing,
+  yield  x _ => just x
+}
+
+
+----------------------------------------------------------------
+-- Section 2.9
+----------------------------------------------------------------
+
+iter' : forall a . (a -> 1) -> List a -> 1
+iter' f nil         = ()
+iter' f (cons x xs) = f x; iter' @a f xs
+
+state1 : forall [a] . <State Int>(1 -> a) -> Int -> a
+state1 m = handle<State Int> m () with {
+  return x    => fun s -> x,
+  get    () r => fun s -> r s s,
+  put    s' r => fun s -> r () s'
+}
+
+state2 : forall a . <State Int>(1 -> a) -> Int -> <State Int>a
+state2 m = handle<State Int> m () with {
+  return x    => fun s -> x,
+  get    () r => fun s -> r s s,
+  put    s' r => fun s -> r () s'
+}
+
+s29 : forall [a] . <State Int>(1 -> a) -> Int -> a
+s29 m s = state2 @a m s
+
+
+----------------------------------------------------------------
+-- Section 8.2
+----------------------------------------------------------------
+
+foo : [Gen Int](Int -> 1)
+foo x = do yield (x + 42)
+
+pair1 : [Gen Int]((Int -> 1) * (Int -> 1))
+pair1 = (foo, foo)
+
+pair2 : ([Gen Int](Int -> 1)) * ([Gen Int](Int -> 1))
+pair2 = (foo, foo)
+
+compose : forall a b c . (a -> b) -> (b -> c) -> (a -> c)
+compose f g x = g (f x)
+
+
+----------------------------------------------------------------
+-- Section 8.2
+----------------------------------------------------------------
+
+handleTwo : ((<Gen Int>(1 -> 1)) * (<State Int>(1 -> 1))) -> (List Int) * 1
+handleTwo (f, g) = (asList f, state g 42)
+
+------------------------------------------------------------------
+
+main : 1 -> 1
+main () = coopExample ()

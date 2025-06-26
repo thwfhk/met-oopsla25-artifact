@@ -1,0 +1,59 @@
+{--- N-Queens ---}
+
+append : forall a . List a -> List a -> List a
+append []          ys = ys
+append (cons x xs) ys = cons x (append @a xs ys)
+
+and : List Bool -> Bool
+and []              = true
+and (cons false xs) = false
+and (cons true xs)  = and xs
+
+effect ND = fail : 1 => [](forall a . a) | choose : 1 => Bool
+
+-- (Int,            List Int)
+--  current column, previous placements
+effect State = get : 1 => Int * List Int | put : Int * List Int => 1
+
+all : forall [a] . <ND>(1 -> a) -> List a
+all m = handle m () with {
+  return x    => [x],
+  fail   () _ => [],
+  choose () r => append @a (r true) (r false)
+}
+
+state : forall [a] . <State>(1 -> a) -> Int * List Int -> a
+state m = handle m () with {
+  return x    => fun s -> x,
+  get    () r => fun s -> r s s,
+  put    s' r => fun s -> r () s'
+}
+
+local : forall [a] . <State, ND>(1 -> a) -> Int * List Int -> List a
+local m s = all @a (fun () -> state @a m s)
+
+select : [ND](Int -> Int)
+select n = if n <= 1 then n else if do choose then n else select (n-1)
+
+guard : [ND](Bool -> 1)
+guard true = ()
+guard false = do fail @1
+
+safe : Int -> Int -> List Int -> Bool
+safe _ _ nil          = true
+safe q n (cons q' qs) = and [q /= q', q /= q'+n, q /= q'-n, safe q (n+1) qs]
+
+placeChess : [State](Int -> 1)
+placeChess r = case (do get) of {
+  (c, sol) -> do put (c+1, cons r sol)
+}
+
+queens : [State, ND](Int -> List Int)
+queens n = case (do get) of {
+  (c, sol) -> if c >= n then sol
+              else let r = select n in
+                   guard (safe r 1 sol); placeChess r; queens n
+}
+
+main : 1 -> List (List Int)
+main () = local @(List Int) (fun () -> queens 4) (0, [])

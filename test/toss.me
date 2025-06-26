@@ -1,0 +1,89 @@
+{--- Drunk coin tossing: basic effect handlers ---}
+
+-- This example requires a handler to be able to handle multiple effects.
+
+-- standard stuffs
+
+data Maybe a = nothing | just a
+
+append : forall a . List a -> List a -> List a
+append nil         ys = ys
+append (cons x xs) ys = cons x (append @a xs ys)
+
+concat : forall a . List (List a) -> List a
+concat nil         = nil
+concat (cons x xs) = append @a x (concat @a xs)
+
+effect Choose = choose : 1 => Bool
+effect Abort  = abort  : 1 => [](forall a . a)
+
+-- the drunken tosser
+
+data Toss = heads | tails
+
+toss : [Choose]{Toss}
+toss! = if do choose then heads else tails
+
+drunkToss : [Choose, Abort]{Toss}
+drunkToss! = if do choose then toss ()
+             else do abort @Toss
+
+drunkTosses : [Choose, Abort](Int -> List Toss)
+drunkTosses 0 = nil
+drunkTosses n = cons (drunkToss ()) (drunkTosses (n-1))
+
+--- handlers
+
+firstChoice : forall [a] . <Choose>{a} -> a
+firstChoice m = handle m () with {
+  return x    => x,
+  choose () r => r true
+}
+
+allChoices : forall [a] . <Choose>{a} -> List a
+allChoices m = handle m () with {
+  return x    => [x],
+  choose () r => append @a (r true) (r false)
+}
+
+maybeAbort : forall [a] . <Abort>{a} -> Maybe a
+maybeAbort m = handle m () with {
+  return x   => just x,
+  abort () r => nothing
+}
+
+listAbort : forall [a] . <Abort>{a} -> List a
+listAbort m = handle m () with {
+  return x   => [x],
+  abort () r => []
+}
+
+allResults : forall [a] . <Choose, Abort>{a} -> List a
+allResults m = handle m () with {
+  return x    => [x],
+  choose () r => append @a (r true) (r false),
+  abort  () r => []
+}
+
+--- tests
+
+t1 : {Toss}
+t1! = firstChoice @Toss toss
+-- Heads
+
+t7 : {List (List Toss)}
+t7! = concat @(List Toss) (allChoices @(List (List Toss))
+  {listAbort @(List Toss) {drunkTosses 2}})
+-- [[heads, heads], [heads, tails], [tails, heads], [tails, tails]]
+
+t8 : {List (List Toss)}
+t8! = concat @(List Toss) (listAbort @(List (List Toss))
+  {allChoices @(List Toss) {drunkTosses 2}})
+-- []
+
+t9 : {List (List Toss)}
+t9! = allResults @(List Toss) {drunkTosses 2}
+-- [[heads, heads], [heads, tails], [tails, heads], [tails, tails]]
+
+main : {List (List Toss)}
+main! = t9 ()

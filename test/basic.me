@@ -1,0 +1,27 @@
+data Maybe a = nothing | just a
+
+id : forall a . a -> a
+id x = x
+
+const : forall a b . a -> b -> a
+const x y = x
+
+empty : forall a . List a -> Bool
+empty nil        = true
+empty (cons _ _) = false
+
+append : forall a . List a -> List a -> List a
+append nil         ys = ys
+append (cons x xs) ys = cons x (append @a xs ys)
+
+map : forall a b . (a -> b) -> List a -> List b
+map f nil         = nil
+map f (cons x xs) = cons (f x) (map @a @b f xs)
+
+-- With explicit type abstraction
+map' : forall a b . (a -> b) -> List a -> List b
+map' @a @b f nil         = nil
+map' @a @b f (cons x xs) = cons (f x) (map @a @b f xs)
+
+main : {List Int}
+main! = map @Int @Int (fun x -> x + 42) [1,2,3]

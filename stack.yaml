@@ -1,0 +1,12 @@
+# resolver: lts-18.27
+resolver: nightly-2025-04-07
+
+packages:
+- .
+
+extra-deps:
+
+system-ghc: true
+
+ghc-options:
+  METL: -Wno-x-partial

@@ -1,0 +1,29 @@
+🐶 Parse succeeds in 0.010144s
+🐱 Type checking succeeds in 0.00617s
+iter    : (Int -> 1) -> List Int -> 1
+s22     : [Gen Int](1 -> List Int -> 1)
+asList  : <Gen Int>(1 -> 1) -> List Int
+s24a    : [Gen Int](1 -> 1) -> [Gen Int, Gen String](1 -> 1)
+s24b    : [Gen Int](1 -> 1) -> <Gen Int>(1 -> 1)
+state   : <State Int>(1 -> 1) -> Int -> 1
+prefixSum   : [Gen Int, State Int](List Int -> 1)
+s25     : List Int
+append  : forall a . List a -> List a -> List a
+push    : Proc -> List Proc -> List Proc
+next    : List Proc -> 1
+schedule    : <Coop>(1 -> 1) -> List Proc -> 1
+coopExample : 1 -> 1
+find    : (Int -> Bool) -> List Int -> Maybe Int
+iter'   : forall a . (a -> 1) -> List a -> 1
+state1  : forall [a] . <State Int>(1 -> a) -> Int -> a
+state2  : forall a . <State Int>(1 -> a) -> Int -> <State Int>a
+s29     : forall [a] . <State Int>(1 -> a) -> Int -> a
+foo     : [Gen Int](Int -> 1)
+pair1   : [Gen Int]((Int -> 1) * (Int -> 1))
+pair2   : ([Gen Int](Int -> 1) * [Gen Int](Int -> 1))
+compose : forall a b c . (a -> b) -> (b -> c) -> a -> c
+handleTwo   : (<Gen Int>(1 -> 1) * <State Int>(1 -> 1)) -> ((List Int) * 1)
+main    : 1 -> 1
+🐰 Evaluation succeeds in 0.009331s
+A1 B1 A2 B2 
+()
