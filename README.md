@@ -63,6 +63,12 @@ you should see a single line:
 Please provide a program file.
 ```
 
+Note: This project by default uses GHC 9.10.1 but is also compatible
+with GHC 9.8.4. There is a known issue with GHC and clang with version
+above 15 on Mac. One workaround is to follow [this
+link](https://github.com/haskell/ghcup-hs/issues/1173), and to change
+the resolver in `stack.yaml` to `lts-23.17`.
+
 ## Evaluation Instructions
 
 The evaluation is rather simple. We have collected all example
